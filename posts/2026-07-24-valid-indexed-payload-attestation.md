@@ -1,6 +1,6 @@
 # Understanding `is_valid_indexed_payload_attestation`
 
-### The goal
+## The goal
 
 The proof is about `isValidIndexedPayloadAttestation`, a function that validates a vote made by a group of Ethereum validators about a block’s execution payload.
 
@@ -19,7 +19,7 @@ The goal is to prove that `isValidIndexedPayloadAttestation` correctly determine
 
 The function is a _pure validation predicate_: it only examines the attestation and the information supplied to it. It produces a yes or no answer without modifying the blockchain state.
 
-### What the proof should establish
+## What the proof should establish
 
 The Lean theorem for `isValidIndexedPayloadAttestation` should characterize exactly when the function returns `true`. It should prove both directions:
 
@@ -36,3 +36,7 @@ Examining the function and its dependencies identifies the conditions the theore
 The theorem provides a backend-generic characterization of the function. In other words, it describes the function’s behavior independently of any particular cryptographic backend. Once the structural checks pass, it proves that the function sends the expected inputs to the configured backend and returns the backend’s aggregate-signature verification result.
 
 It does not prove that callers construct indexed attestations correctly or that the backend or underlying BLS cryptography is sound.
+
+## Upstream work
+
+[Proof of `isValidIndexedPayloadAttestation` in Etheorem](https://github.com/etheorem/etheorem/pull/38)
