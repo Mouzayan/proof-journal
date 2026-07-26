@@ -6,7 +6,7 @@ My notes on formalizing Ethereum consensus properties in Lean.
 
 ### 2026
 
-- **July 24** — [Understanding is_valid_indexed_payload_attestation](posts/2026-07-24-valid-indexed-payload-attestation.md) — Characterizing the validation of indexed payload attestations and aggregate signatures.
+- **July 24** — [Understanding `isValidIndexedPayloadAttestation`](posts/2026-07-24-valid-indexed-payload-attestation.md) — Characterizing the validation of indexed payload attestations and aggregate signatures.
 
 ### License
 
