@@ -37,6 +37,20 @@ The theorem provides a backend-generic characterization of the function. In othe
 
 It does not prove that callers construct indexed attestations correctly or that the backend or underlying BLS cryptography is sound.
 
+## How the proof is structured
+
+The proof is organized in two layers.
+
+The first theorem, `isValidIndexedPayloadAttestation_eq_true_iff_checks`, unfolds the function and describes its result in terms of the checks performed by the implementation itself. These include the literal `Array.all` expressions used for adjacent ordering and registry bounds, together with the non-empty-list check and the aggregate-signature verification call.
+
+Two bridge lemmas then translate those `Array.all` expressions into clearer propositions about individual validator indices. The second theorem, `isValidIndexedPayloadAttestation_eq_true_iff`, uses these lemmas to give a more readable characterization: every adjacent pair is nondecreasing, every validator index is in range, and the configured backend accepts the exact verification inputs constructed by the function.
+
+This two-layer design keeps the proof closely connected to the executable implementation while also producing a theorem that is easy to understand and use elsewhere. Together, the two theorems cover every possible Boolean outcome, including empty input, failed ordering, out-of-range indices, backend rejection, and successful validation.
+
+This also explains two edge cases. A one-element list passes the ordering check because it has no adjacent pair to compare. Duplicate indices are allowed because the ordering check uses “less than or equal to,” not strict “less than.”
+
+The proof uses the same Gloas-local definitions of `getDomain` and `computeEpochAtSlot` as the implementation, ensuring that the theorem describes the code exactly. The result is one theorem that mirrors the code directly and another that expresses the same checks more clearly in terms of validator indices—all without requiring mathlib.
+
 ## Upstream work
 
 Proof in [etheorem](https://github.com/etheorem/etheorem/pull/38)
