@@ -39,4 +39,4 @@ It does not prove that callers construct indexed attestations correctly or that 
 
 ## Upstream work
 
-[Proof of `isValidIndexedPayloadAttestation` in Etheorem](https://github.com/etheorem/etheorem/pull/38)
+Proof in [etheorem](https://github.com/etheorem/etheorem/pull/38)
