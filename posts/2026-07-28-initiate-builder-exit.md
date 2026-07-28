@@ -1,0 +1,3 @@
+# Understanding `initiateBuilderExit`
+
+## The Goal
