@@ -28,3 +28,23 @@ Because the general theorem allows these settings to vary, it cannot guarantee t
 However, overflow can be ruled out for the fixed settings defined by the test-oriented minimal configuration and the mainnet configuration, provided `currentEpoch` remains below a suitable limit.
 
 ## What the Proof Establishes
+
+The Lean proof characterizes exactly how initiateBuilderExit affects the builder registry—the part of BeaconState that records registered ePBS builders and information about their identities, balances, and lifecycle status.
+
+It covers both possible kinds of builder index:
+
+If the index identifies an existing builder, the function succeeds and updates only that builder’s withdrawableEpoch. The builder’s other fields, every other builder, and the size of the registry remain unchanged.
+
+If the index is out of range, the function also succeeds. Lean’s total [i]! semantics do not throw an error when the requested index does not exist, and every proved total element read and the registry size remain unchanged.
+
+The proof also establishes that:
+
+the result holds for both cached and uncached state representations;
+
+the new withdrawableEpoch is calculated using the epoch derived from the pre-state, before the registry update;
+
+for arbitrary protocol settings, the theorem describes the result even when the UInt64 addition wraps around; and
+
+for Etheorem’s minimal and mainnet configurations, the addition is proved not to wrap around. Each configuration uses its corresponding preset and protocol constants.
+
+This is a local characterization of one call to initiateBuilderExit, not a proof of the complete builder-exit process. It does not prove that every unrelated BeaconState field remains unchanged, that processBuilderExitRequest always supplies a in-range index, that the builder eventually receives its withdrawal, or that the entire exit workflow is correct.
