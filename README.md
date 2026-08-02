@@ -6,7 +6,7 @@ My notes on formalizing Ethereum consensus properties in Lean.
 
 ### 2026
 
-- **July 28** — [Understanding](posts/2026-07-28-initiate-builder-exit.md) `initiateBuilderExit` — Characterizing builder exit initiation and the conditions required to prevent overflow.
+- **July 28** — [Understanding `initiateBuilderExit`](posts/2026-07-28-initiate-builder-exit.md) — Characterizing builder-exit state updates, out-of-range behavior, and no-overflow guarantees.
 - **July 24** — [Understanding](posts/2026-07-24-valid-indexed-payload-attestation.md) `isValidIndexedPayloadAttestation` — Characterizing the validation of indexed payload attestations and aggregate signatures.
 
 ### License
