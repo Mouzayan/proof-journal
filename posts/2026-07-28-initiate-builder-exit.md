@@ -52,7 +52,7 @@ It does not prove that every unrelated `BeaconState` field remains unchanged, th
 
 The proof is organized in three layers.
 
-**State-transition layer.** The first layer runs `initiateBuilderExit` in the concrete `EStateM StateTransitionError State` monad—the execution wrapper that carries the current state and records whether execution succeeds or returns an error.
+**State-transition layer.** The first layer runs `initiateBuilderExit` in the concrete `EStateM StateTransitionError State` monad, the execution wrapper that carries the current state and records whether execution succeeds or returns an error.
 It handles in-range and out-of-range builder indices separately.
 
 For an in-range index, the proof shows that the selected builder’s post-state `withdrawableEpoch` is the `UInt64` sum of the epoch derived from the pre-state and the configured withdrawal delay.
@@ -67,3 +67,17 @@ A function-level corollary then combines this result with the state-transition t
 **Configuration-specific layer.** An arbitrary `Config` may specify an unsafe withdrawal delay, so the generic result requires the explicit `2^64` bound.
 For the repository’s paired minimal and mainnet Gloas configurations, however, the proof establishes this bound automatically from the fact that `state.slot` is a `UInt64` and from the fixed preset/config values, including the preset’s number of slots per epoch and the configuration’s builder withdrawal delay.
 The resulting corollaries require only an in-range builder index—no additional epoch, slot, or no-overflow hypothesis is needed.
+
+## Takeaway
+
+The key design decision was to separate the function’s state-transition behavior from the arithmetic no-overflow result.
+The generic theorem first describes exactly what `initiateBuilderExit` stores, even when `UInt64` addition could wrap.
+A separate arithmetic result then connects that stored value to the intended mathematical sum, while the minimal and mainnet corollaries rule out wrapping without requiring additional epoch, slot, or no-overflow assumptions.
+
+The most surprising detail was the out-of-range behavior.
+An invalid builder index does not cause the function to fail: under Lean’s total `[i]!` semantics, the call succeeds and the builder registry is observationally unchanged.
+Because internal cache bookkeeping may still differ, the proof compares the meaningful values exposed through `sszGet` rather than requiring the raw state representations to be identical.
+
+## Upstream Work
+
+Proof in [etheorem](https://github.com/etheorem/etheorem/pull/39)
