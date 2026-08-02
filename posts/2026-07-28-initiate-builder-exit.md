@@ -68,6 +68,7 @@ A function-level corollary then combines this result with the state-transition t
 
 **Configuration-specific layer.** `[Preset]` and `[Config]` provide the protocol settings used by the function.
 The preset includes values such as the number of slots per epoch, while the configuration provides values such as the builder withdrawal delay.
+
 An arbitrary `Config` may specify an unsafe withdrawal delay, so the generic result requires the explicit `2^64` bound.
 I proved configuration-specific corollaries for the repository’s paired minimal and mainnet Gloas configurations.
 These proofs establish the bound automatically from the fact that `state.slot` is a `UInt64` and from the fixed preset and configuration values.
