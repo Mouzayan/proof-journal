@@ -71,11 +71,11 @@ The resulting corollaries require only an in-range builder index—no additional
 ## Takeaway
 
 The key design decision was to separate the function’s state-transition behavior from the arithmetic no-overflow result.
-The generic theorem first describes exactly what `initiateBuilderExit` stores, even when `UInt64` addition could wrap.
-A separate arithmetic result then connects that stored value to the intended mathematical sum, while the minimal and mainnet corollaries rule out wrapping without requiring additional epoch, slot, or no-overflow assumptions.
+For an in-range index, the generic theorem first describes exactly what `initiateBuilderExit` stores, even when the `UInt64` addition could wrap.
+A separate arithmetic theorem connects that stored value to the intended mathematical sum, while the minimal and mainnet corollaries rule out wrapping without requiring additional epoch, slot, or no-overflow assumptions.
 
-The most surprising detail was the out-of-range behavior.
-An invalid builder index does not cause the function to fail: under Lean’s total `[i]!` semantics, the call succeeds and the builder registry is observationally unchanged.
+A less obvious aspect of the implementation is its out-of-range behavior.
+An out-of-range builder index does not cause the function to fail: under Lean’s total `[i]!` semantics, the call succeeds and the builder registry is observationally unchanged.
 Because internal cache bookkeeping may still differ, the proof compares the meaningful values exposed through `sszGet` rather than requiring the raw state representations to be identical.
 
 ## Upstream Work
