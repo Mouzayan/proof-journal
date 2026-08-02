@@ -47,3 +47,23 @@ The proof also establishes that:
 
 This is a _local characterization_ of one call to `initiateBuilderExit`, not a proof of the complete builder-exit process.
 It does not prove that every unrelated `BeaconState` field remains unchanged, that `processBuilderExitRequest` always supplies an in-range index, that the builder eventually receives its withdrawal, or that the entire exit workflow is correct.
+
+## How I Structured the Proof
+
+The proof is organized in three layers.
+
+**State-transition layer.** The first layer runs `initiateBuilderExit` in the concrete `EStateM StateTransitionError State` monad—the execution wrapper that carries the current state and records whether execution succeeds or returns an error.
+It handles in-range and out-of-range builder indices separately.
+
+For an in-range index, the proof shows that the selected builder’s post-state `withdrawableEpoch` is the `UInt64` sum of the epoch derived from the pre-state and the configured withdrawal delay.
+For an out-of-range index, it proves _observational preservation_: internal cache bookkeeping may differ, but every total builder-element read and the registry size agree with the pre-state.
+The proof therefore compares values through `sszGet`, which exposes the meaningful stored values, rather than comparing the raw state representations.
+
+**Arithmetic layer.** The second layer proves that the `UInt64` addition equals the intended `Nat` sum when the mathematical sum is less than `2^64`.
+In other words, it treats the epoch and delay as ordinary unbounded natural numbers and requires their sum to fit within a `UInt64`.
+Under that condition, the machine-number addition cannot wrap around.
+A function-level corollary then combines this result with the state-transition theorem to show that the builder’s stored `withdrawableEpoch` equals the intended mathematical sum.
+
+**Configuration-specific layer.** An arbitrary `Config` may specify an unsafe withdrawal delay, so the generic result requires the explicit `2^64` bound.
+For the repository’s paired minimal and mainnet Gloas configurations, however, the proof establishes this bound automatically from the fact that `state.slot` is a `UInt64` and from the fixed preset/config values, including the preset’s number of slots per epoch and the configuration’s builder withdrawal delay.
+The resulting corollaries require only an in-range builder index—no additional epoch, slot, or no-overflow hypothesis is needed.
