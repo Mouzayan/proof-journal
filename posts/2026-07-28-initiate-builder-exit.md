@@ -19,32 +19,31 @@ If their mathematical sum exceeds the largest value that a `UInt64` can represen
 
 The goal is therefore to establish two separate results:
 
-1. **An exact characterization of the function’s behavior:** If the builder index is in range, the function updates only that builder’s `withdrawableEpoch`, setting it to the result of the `UInt64` addition. If the index is out of range, the state is unchanged.
+1. **An exact characterization of the function’s behavior:** If the builder index is in range, the function updates only that builder’s `withdrawableEpoch` within the builder registry, setting it to the result of the `UInt64` addition. If the index is out of range, the function still succeeds, and every proved builder-registry element read and the registry size remain unchanged.
 
-2. **A conditional no-overflow result:** If the mathematical sum of the current epoch and the withdrawal delay is less than `2^64`, the stored `UInt64` value equals the intended ordinary mathematical sum.
+2. **Generic and configuration-specific no-overflow results:** For arbitrary protocol settings, if the mathematical sum of the current epoch and the withdrawal delay is less than `2^64`, the stored `UInt64` value equals the intended ordinary mathematical sum. For the repository’s paired minimal and mainnet Gloas configurations, the proof establishes that this addition cannot overflow, without requiring an additional epoch, slot, or no-overflow assumption.
 
-`Preset` and `Config` represent the protocol settings available to the function, including the builder withdrawal delay.
-Because the general theorem allows these settings to vary, it cannot guarantee that the calculation never overflows.
-However, overflow can be ruled out for the fixed settings defined by the test-oriented minimal configuration and the mainnet configuration, provided `currentEpoch` remains below a suitable limit.
+`[Preset]` and `[Config]` provide the protocol settings used by the function.
+The preset includes values such as the number of slots per epoch, while the configuration provides values such as the builder withdrawal delay.
+Because the generic theorem allows these settings to vary, it cannot rule out overflow for every possible configuration without an explicit bound.
+The fixed values in the paired minimal and mainnet configurations allow that bound to be proved automatically.
+Consequently, the combined function-level results for those configurations require only that the builder index is in range.
 
 ## What the Proof Establishes
 
-The Lean proof characterizes exactly how initiateBuilderExit affects the builder registry—the part of BeaconState that records registered ePBS builders and information about their identities, balances, and lifecycle status.
+The Lean proof characterizes exactly how `initiateBuilderExit` affects the builder registry—the part of `BeaconState` that records registered ePBS builders and information about their identities, balances, and lifecycle status.
 
 It covers both possible kinds of builder index:
 
-If the index identifies an existing builder, the function succeeds and updates only that builder’s withdrawableEpoch. The builder’s other fields, every other builder, and the size of the registry remain unchanged.
-
-If the index is out of range, the function also succeeds. Lean’s total [i]! semantics do not throw an error when the requested index does not exist, and every proved total element read and the registry size remain unchanged.
+- If the index identifies an existing builder, the function succeeds and updates only that builder’s `withdrawableEpoch`. The builder’s other fields, every other builder, and the size of the registry remain unchanged.
+- If the index is out of range, the function also succeeds. Lean’s total `[i]!` semantics do not throw an error when the requested index does not exist, and every proved total element read and the registry size remain unchanged.
 
 The proof also establishes that:
 
-the result holds for both cached and uncached state representations;
+- the result holds for both cached and uncached state representations;
+- the new `withdrawableEpoch` is calculated using the epoch derived from the pre-state, before the registry update;
+- for arbitrary protocol settings, the theorem describes the result even when the `UInt64` addition wraps around; and
+- for Etheorem’s minimal and mainnet configurations, the addition is proved not to wrap around. Each configuration uses its corresponding preset and protocol constants.
 
-the new withdrawableEpoch is calculated using the epoch derived from the pre-state, before the registry update;
-
-for arbitrary protocol settings, the theorem describes the result even when the UInt64 addition wraps around; and
-
-for Etheorem’s minimal and mainnet configurations, the addition is proved not to wrap around. Each configuration uses its corresponding preset and protocol constants.
-
-This is a local characterization of one call to initiateBuilderExit, not a proof of the complete builder-exit process. It does not prove that every unrelated BeaconState field remains unchanged, that processBuilderExitRequest always supplies a in-range index, that the builder eventually receives its withdrawal, or that the entire exit workflow is correct.
+This is a _local characterization_ of one call to `initiateBuilderExit`, not a proof of the complete builder-exit process.
+It does not prove that every unrelated `BeaconState` field remains unchanged, that `processBuilderExitRequest` always supplies an in-range index, that the builder eventually receives its withdrawal, or that the entire exit workflow is correct.
