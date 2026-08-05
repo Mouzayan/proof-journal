@@ -26,9 +26,9 @@ A BLS-to-execution credential change, for example, replaces a validator’s olde
 The state produced by each group becomes the input to the next.
 If any handler fails, processing stops and the remaining groups are not run.
 State changes made by earlier handlers are not automatically undone: the concrete Lean `EStateM` runner carries the current state forward and includes the state reached at the point of failure in its error result.
-The proof records this behavior as part of the function’s implemented semantics; it does not attempt to establish a general rollback policy.
+The proof confirms this failure-state behavior for `processOperations` under the concrete Lean `EStateM` runner, but makes no broader claim about rollback behavior elsewhere.
 
-The goal is to characterize this orchestration precisely.
+The goal of the proof is to characterize this orchestration precisely.
 The proof establishes that a non-empty legacy deposit list always causes immediate rejection.
 It then shows that every successful call corresponds to all six operation groups completing successfully in the specified order, with each handler receiving the state produced by the preceding stage.
 Conversely, if the deposit list is empty and the six handlers succeed in sequence, `processOperations` succeeds and returns the state produced by the final payload-attestation stage.
