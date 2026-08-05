@@ -37,4 +37,4 @@ The proof therefore captures the function’s control flow directly: the initial
 
 ## Upstream Work
 
-Proof: [etheorem PR #57 — `processOperations`](https://github.com/etheorem/etheorem/pull/57) operation-sequencing and state-propagation proofs
+Proof: [etheorem PR #57](https://github.com/etheorem/etheorem/pull/57) — `processOperations` operation-sequencing and state-propagation proofs
