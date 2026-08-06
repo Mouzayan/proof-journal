@@ -120,12 +120,12 @@ Changes inside an opaque handler may not affect this proof because handler corre
 
 ## Takeaway
 
-Formalizing `processOperations` showed that a coordinator can have a precise correctness story without re-proving the operations it dispatches.
-By treating the handlers as opaque and specializing the polymorphic function to its concrete `EStateM` runner, the proof isolates what the coordinator itself guarantees: the deposit gate, the required execution order, the threading of intermediate states, and the conditions for success.
+Proving properties of `processOperations` showed that a coordinator can have a precise correctness story without re-proving the operations it dispatches.
+By taking the behavior of each handler as given and analyzing the function with the actual state-and-error runner used by Gloas, the proof focuses on what the coordinator itself controls: checking the deposit list, calling the operation groups in the required order, passing each updated state to the next group, and succeeding only when every stage succeeds.
 
 The main structural step was connecting the source level `SSZList` loops to the left-to-right folds used in the theorem.
 That bridge keeps the characterization tied to the implementation and makes it sensitive to changes in the operation families or their order.
-The deposit result also illustrates an important limit of exact-runner proofs: an output does not always reveal which part of the computation produced it, so causal claims should be made only when the available assumptions justify them.
+The deposit result also illustrates an important limitation of proofs about concrete execution: an output does not always reveal which part of the computation produced it, so causal claims should be made only when the available assumptions justify them.
 
 ## Upstream Work
 
