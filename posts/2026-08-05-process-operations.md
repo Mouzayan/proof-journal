@@ -35,6 +35,56 @@ Conversely, if the deposit list is empty and the six handlers succeed in sequenc
 
 The proof therefore captures the function’s control flow directly: the initial deposit check, the required order of execution, the propagation of intermediate states, the point at which processing stops after a failure, and the conditions under which the complete operation-processing pipeline succeeds.
 
+## What the Proof Establishes
+
+The proof establishes two principal function-level results about Gloas `processOperations`.
+
+First, it proves the exact behavior of the legacy-deposit check.
+If the block’s legacy deposit list is non-empty, `processOperations` immediately returns an assertion error with the original pre-state, before any operation handler runs:
+
+```
+body.deposits.size ≠ 0
+→ processOperations returns .error (.assert _) pre
+```
+
+As a consequence, whenever `processOperations` succeeds, the legacy deposit list must have been empty:
+
+```
+processOperations succeeds → body.deposits.size = 0
+```
+
+Second, the proof gives an exact characterization of successful orchestration.
+`processOperations` succeeds if and only if the deposit list is empty and all six operation-family loops succeed sequentially in the order required by the implementation, with each loop receiving the state produced by the preceding loop.
+
+The forward direction proves that every successful run has the following structure:
+
+- The deposit list was empty.
+- Proposer slashings succeeded from the pre-state.
+- Attester slashings succeeded from the resulting state.
+- Attestations succeeded next.
+- Voluntary exits succeeded next.
+- BLS-to-execution changes succeeded next.
+- Payload attestations succeeded last and produced the final post-state.
+
+The reverse direction proves that if the deposit list is empty and precisely this sequence of loops succeeds, then `processOperations` returns `.ok () post`, meaning that the computation completed successfully with post as its final state.
+
+The theorem introduces five intermediate states, one after each of the first five operation families.
+The final post state is produced by the sixth and last family, payload attestations.
+This formulation makes the execution order and state threading explicit and proves that no operation family is skipped during a successful run.
+
+The proof also covers several important edge cases.
+If all six operation lists are empty, their folds succeed without changing the state.
+If a handler successfully updates the state, that updated state is passed to the next operation family.
+If a handler fails, no complete success chain exists and, by the equivalence, `processOperations` does not return successfully.
+The theorem makes no claim about the state returned after such a handler failure, including whether earlier changes are preserved or rolled back.
+
+The result is generic over `[CryptoBackend]` and `[Config]`, requires no state well-formedness assumption, and treats the individual handlers as opaque.
+`CryptoBackend` selects the implementation used for cryptographic checks, while `Config` supplies protocol settings and constants.
+Although the concrete handlers require these dependencies, the coordinator proof assumes no particular configuration values or cryptographic behavior.
+
+The proof therefore establishes the coordinator’s sequencing without claiming that signatures, balances, individual operations, or handler postconditions are correct.
+It intentionally does not establish complete `processBlock` correctness, preservation of protocol invariants, the exact error state produced by every possible handler failure, or the validity of the operations contained in each list.
+
 ## Upstream Work
 
 Proof: [etheorem PR #57](https://github.com/etheorem/etheorem/pull/57) — `processOperations` operation-sequencing and state-propagation proofs
