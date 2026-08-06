@@ -76,6 +76,53 @@ The `[CryptoBackend]` and `[Config]` parameters provide the cryptographic implem
 Because the handlers are treated as opaque, the proof establishes only the coordinator’s control flow.
 It does not establish the validity of individual operations, handler postconditions, protocol-invariant preservation, exact error states for handler failures, or complete `processBlock` correctness.
 
+## How I Structured the Proof
+
+I treated this as an exact-runner proof rather than a protocol-correctness proof.
+It describes how the Lean function executes: when it succeeds, how it handles the deposit check, and how it passes state between operation groups.
+It does not prove the correctness of Ethereum’s broader protocol rules or the individual operations.
+
+Although `processOperations` is polymorphic over its transition monad and can work with different state-and-error wrappers, the theorems specialize it to the concrete `EStateM StateTransitionError State` runner used by the Gloas interface.
+This specialization allows the proof to describe exact `.ok` and `.error` results, intermediate states, and short-circuit behavior.
+
+`EStateM StateTransitionError State` carries a Beacon State through the computation.
+It can either succeed with an updated state or fail with a state-transition error, recording the state reached when the error occurred.
+
+I introduced `ProcessOperationsRun` as a transparent name for this concrete runner.
+I also introduced `processOperationsForM` as a transparent name for processing one operation list from left to right through its handler.
+
+The source function uses Lean for loops over `SSZList`.
+An `SSZList` is a size-limited collection used for Ethereum consensus data and Simple Serialize (SSZ) encoding.
+It preserves a definite operation order and cannot exceed its protocol-defined capacity.
+
+Rather than assuming how these loops execute, I proved a bridge between each source-level loop and `ForM.forM` over the `SSZList`’s underlying array, which Lean represents definitionally using `Array.foldlM`.
+`ForM.forM` processes the items from left to right: it runs the handler on the first item, passes the resulting state to the next, and stops if an error occurs.
+The bridge therefore connects the theorem’s folds directly to the loops in the source implementation.
+
+The first public theorem, `processOperations_nonempty_deposits_error`, handles the opening deposit assertion.
+It is deliberately one-directional: non-empty deposits imply an immediate assertion failure with the pre-state preserved.
+
+A converse would be misleading.
+When deposits are empty, an opaque operation handler could theoretically return an `.assert` error without changing the state.
+Observing that result alone would not prove that the opening deposit check caused the failure.
+
+The second public theorem, `processOperations_run_ok_iff`, is the main function-level result and is bidirectional.
+Private bind-decomposition lemmas split a successful sequence into two parts: the first action succeeds with an intermediate state, and the remaining actions succeed from that state.
+Applying these lemmas repeatedly exposes the five intermediate states.
+The reverse direction uses the same structure to reconstruct the complete successful run.
+
+`[Config]` and `[CryptoBackend]` are not assumptions about the coordinator’s correctness.
+They remain in the theorem because the concrete handlers require them in order for the function to be defined.
+The proof assumes no particular configuration values or cryptographic behavior, nor does it rely on the correctness of native cryptographic code reached through the Foreign Function Interface (FFI), cache equivalence, or the handlers themselves.
+
+I did not add a theorem classifying every possible failure inside an operation handler.
+The immediate deposit-rejection theorem and the successful-run equivalence cover the coordinator-level scope.
+Ordinary `EStateM` bind semantics ensure that when an action fails, later actions do not run.
+
+The characterization is intentionally sensitive to the implementation.
+The bridge identifies the source-level for loops with the six folds described by the theorem, and the sequencing proof shows that those folds run in order while threading the resulting states between them.
+If the deposit gate, operation families, loop order, handlers, or `SSZList` iteration behavior changes, the proof should stop compiling instead of continuing to certify an outdated description of the function.
+
 ## Upstream Work
 
 Proof: [etheorem PR #57](https://github.com/etheorem/etheorem/pull/57) — `processOperations` operation-sequencing and state-propagation proofs
