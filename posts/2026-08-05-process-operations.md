@@ -115,6 +115,12 @@ This characterization is intentionally sensitive to the coordinator’s implemen
 If the deposit gate, operation families, selected handlers, loop order, or `SSZList` iteration behavior changes, the bridge or sequencing proof should stop compiling instead of continuing to certify an outdated description.
 Changes inside an opaque handler may not affect this proof because handler correctness is deliberately outside its scope.
 
+## Takeaway
+
+Formalizing processOperations showed that a coordinator can have a precise correctness story without re-proving the operations it dispatches. By treating the handlers as opaque and specializing the polymorphic function to its concrete EStateM runner, the proof isolates what the coordinator itself guarantees: the deposit gate, the required execution order, the threading of intermediate states, and the conditions for success.
+
+The main structural step was connecting the source-level SSZList loops to the left-to-right folds used in the theorem. That bridge keeps the characterization tied to the implementation and makes it sensitive to changes in the operation families or their order. The deposit result also illustrates an important limit of exact-runner proofs: an output does not always reveal which part of the computation produced it, so causal claims should be made only when the available assumptions justify them.
+
 ## Upstream Work
 
 Proof: [etheorem PR #57](https://github.com/etheorem/etheorem/pull/57) — `processOperations` operation-sequencing and state-propagation proofs
