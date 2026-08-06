@@ -9,9 +9,9 @@ Formalizing it exposed two less obvious questions: how can the proof track state
 Its role is not to implement the rules for each operation, but to invoke the appropriate handlers in the required order and pass the resulting Beacon State from one stage to the next.
 
 Before processing any operations, the function checks the block’s legacy deposit list.
-Gloas instead handles deposits as execution-layer requests while processing the parent execution payload, elsewhere in the broader block-processing pipeline.
-A block reaching `processOperations` must therefore have an empty legacy deposit list.
-If the list is non-empty, the function rejects the block before any operation can modify the state.
+Gloas handles deposits through the newer deposit request path: deposits arrive as execution-layer requests and are processed in connection with the parent execution payload.
+To pass `processOperations`, a block must have an empty legacy deposit list.
+If the list is non-empty, the function rejects the block before any operation handler runs.
 
 When the deposit check passes, the function processes six operation groups in sequence:
 
@@ -22,11 +22,11 @@ When the deposit check passes, the function processes six operation groups in se
 5. BLS-to-execution credential changes; and
 6. payload attestations.
 
-Each group is delegated to a specialized handler that validates its operations and applies the corresponding state changes.
+Each operation in a group is passed to that group’s specialized handler, which validates the operation and applies its corresponding state changes.
 A BLS-to-execution credential change, for example, replaces a validator’s older BLS withdrawal credentials with an Ethereum execution address, allowing future withdrawals to be sent there.
 
 The state produced by each group becomes the input to the next.
-If a handler fails, processing stops and the remaining groups are not run.
+If a handler invocation fails, the remaining operations in that group and all later groups are not run.
 Under the concrete Lean `EStateM` runner, the error result carries the state reached at the point of failure rather than automatically restoring the pre-state.
 
 The goal of the proof is to characterize this orchestration precisely.
@@ -47,26 +47,26 @@ body.deposits.size ≠ 0
 It follows that `processOperations` can succeed only when the legacy deposit list is empty.
 
 Second, the proof characterizes successful orchestration.
-`processOperations` succeeds if and only if the deposit list is empty and all six operation-family loops succeed in the required order, with each loop receiving the state produced by the preceding loop.
+`processOperations` succeeds if and only if the deposit list is empty and all six operation family loops succeed in the required order, with each loop receiving the state produced by the preceding loop.
 
 The forward direction exposes five intermediate states, one after each of the first five operation families, connecting the original pre-state to the post-state produced by payload attestations.
 The reverse direction shows that if this complete sequence succeeds, then `processOperations` returns `.ok () post`.
 
-This characterization also covers the empty-list case: if all six operation lists are empty, their folds succeed without changing the state.
+This characterization also covers the empty list case: if the deposit list and all six operation lists are empty, the function succeeds without changing the state.
 If a handler fails, no complete success chain exists, so `processOperations` cannot return successfully.
-The equivalence characterizes success; it does not classify the exact error or state returned by every possible handler failure.
+The equivalence characterizes success, it does not classify the exact error or state returned by every possible handler failure.
 
-The result is generic over `[CryptoBackend]` and `[Config]` and requires no state well-formedness assumption.
-These parameters provide the cryptographic implementation and protocol configuration required by the handlers, but the sequencing proof assumes no particular values or cryptographic behavior.
+The result is generic over `[Preset]`, `[HasherTag]`, `[Config]`, and `[CryptoBackend]` and requires no state well-formedness assumption.
+These parameters supply the container limits, state representation, protocol configuration, and cryptographic implementation required by the concrete handlers, but the sequencing proof assumes no particular values or cryptographic behavior.
 
 Because the handlers are treated as opaque, the proof establishes only the coordinator’s control flow.
-It does not establish the validity of individual operations, handler postconditions, protocol-invariant preservation, exact error states for handler failures, or complete `processBlock` correctness.
+It does not establish the validity of individual operations, handler postconditions, protocol invariant preservation, exact error states for handler failures, or complete `processBlock` correctness.
 
 ## How I Structured the Proof
 
 I structured this as a proof of concrete execution rather than protocol correctness.
 Although `processOperations` is polymorphic over its transition monad, the theorems specialize it to the `EStateM StateTransitionError State` runner used by the Gloas interface.
-This makes exact `.ok` and `.error` results, intermediate states, and short-circuit behavior visible in the theorem statements.
+This makes the exact deposit gate error, successful result, intermediate states, and successful state threading visible in the theorem statements.
 
 I introduced `ProcessOperationsRun` as a transparent name for this runner and `processOperationsForM` as a transparent name for processing one operation list from left to right through its handler.
 
@@ -85,8 +85,9 @@ When deposits are empty, an opaque handler could theoretically return an `.asser
 Observing that result alone would not prove that the opening deposit check caused the failure.
 
 The second public theorem, `processOperations_run_ok_iff`, is the main function-level result and is bidirectional.
-Private bind-decomposition lemmas split a successful sequence into two parts: the first action succeeds with an intermediate state, and the remaining actions succeed from that state.
-Applying these lemmas repeatedly exposes the five intermediate states; the reverse direction uses the same structure to reconstruct the complete successful run.
+Private bind decomposition lemmas split a successful sequence into two parts: the first action succeeds with an intermediate state, and the remaining actions succeed from that state.
+Applying these lemmas repeatedly exposes the five intermediate states.
+The reverse direction uses the same structure to reconstruct the complete successful run.
 
 The characterization is intentionally sensitive to the coordinator’s implementation.
 If the deposit gate, operation families, selected handlers, loop order, or `SSZList` iteration behavior changes, the bridge or sequencing proof should stop compiling instead of continuing to certify an outdated description.
@@ -94,8 +95,8 @@ Changes inside an opaque handler may not affect this proof because handler corre
 
 ## Takeaway
 
-Proving properties of `processOperations` showed that a coordinator can have a precise correctness story without re-proving the operations it dispatches.
-By taking each handler’s behavior as given, the proof isolates what the coordinator controls: the deposit check, execution order, propagation of updated states, and conditions for success.
+Proving properties of `processOperations` showed that a coordinator can have a precise formal control flow characterization without re-proving the operations it dispatches.
+By treating each handler as an opaque action, the proof isolates what the coordinator controls: the deposit check, execution order, propagation of updated states, and conditions for success.
 
 The key structural step was connecting the source-level `SSZList` loops to the left-to-right folds used in the theorem.
 This keeps the result tied to the implementation.
