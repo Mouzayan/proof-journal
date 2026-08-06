@@ -1,7 +1,7 @@
 # Understanding `processOperations`
 
 `processOperations` looks like a deposit check followed by six loops.
-Formalizing it exposed two less obvious questions: how can the proof track state through every loop, and when does an error identify the part of the computation that produced it?
+Formalizing it exposed two less obvious questions: how can the proof track state through every loop, and how much can the final result reveal about where execution stopped?
 
 ## The Goal
 
