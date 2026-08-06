@@ -47,11 +47,7 @@ body.deposits.size ≠ 0
 → processOperations returns .error (.assert _) pre
 ```
 
-It follows that whenever `processOperations` succeeds, the legacy deposit list must have been empty:
-
-```
-processOperations succeeds → body.deposits.size = 0
-```
+It follows that `processOperations` can succeed only when the legacy deposit list is empty.
 
 Second, the proof characterizes successful orchestration.
 `processOperations` succeeds if and only if the deposit list is empty and all six operation-family loops succeed in the required order, with each loop receiving the state produced by the preceding loop.
