@@ -40,7 +40,7 @@ The proof therefore captures the function’s control flow directly: the initial
 The proof establishes two function-level results about Gloas `processOperations`.
 
 First, it proves the exact behavior of the legacy-deposit check.
-If the block’s legacy deposit list is non-empty, `processOperations` immediately returns an assertion error with the original pre-state, before any operation handler runs:
+If the block’s legacy deposit list is non-empty, `processOperations` immediately returns an assertion error with the pre-state, before any operation handler runs:
 
 ```
 body.deposits.size ≠ 0
@@ -68,13 +68,14 @@ The forward direction shows that every successful run has the following structur
 
 The reverse direction shows that if the deposit list is empty and this sequence of loops succeeds, then `processOperations` returns `.ok () post`.
 
-Five intermediate states—one after each of the first five operation families—make the ordering and state threading explicit.
+Five intermediate states, one after each of the first five operation families, make the ordering and state threading explicit.
 If all six operation lists are empty, their folds succeed without changing the state.
-If a handler fails, no complete success chain exists and `processOperations` cannot return successfully.
-The theorem makes no claim about the state returned after such a failure, including whether earlier changes are preserved or rolled back.
+If any handler invocation in the actual sequence fails, no complete success chain exists, so `processOperations` cannot return successfully.
+The public theorems do not characterize the exact error or state returned by a later handler failure.
+Under `EStateM`, state changes made before a failure are not automatically rolled back.
 
 The result is generic over `[CryptoBackend]` and `[Config]` and requires no state well-formedness assumption.
-These parameters provide the cryptographic implementation and protocol configuration required by the handlers, but the proof assumes no particular values or cryptographic behavior.
+The `[CryptoBackend]` and `[Config]` parameters provide the cryptographic implementation and protocol configuration required by the handlers, but the proof assumes no particular values or cryptographic behavior.
 
 Because the handlers are treated as opaque, the proof establishes only the coordinator’s control flow.
 It does not establish the validity of individual operations, handler postconditions, protocol-invariant preservation, exact error states for handler failures, or complete `processBlock` correctness.
