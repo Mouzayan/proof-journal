@@ -1,5 +1,8 @@
 # Understanding `processOperations`
 
+`processOperations` looks like a deposit check followed by six loops.
+Formalizing it exposed two less obvious questions: how can the proof track state through every loop, and when does an error identify the part of the computation that produced it?
+
 ## The Goal
 
 `processOperations` coordinates the processing of the consensus operations contained in a Gloas block.
@@ -117,9 +120,12 @@ Changes inside an opaque handler may not affect this proof because handler corre
 
 ## Takeaway
 
-Formalizing processOperations showed that a coordinator can have a precise correctness story without re-proving the operations it dispatches. By treating the handlers as opaque and specializing the polymorphic function to its concrete EStateM runner, the proof isolates what the coordinator itself guarantees: the deposit gate, the required execution order, the threading of intermediate states, and the conditions for success.
+Formalizing `processOperations` showed that a coordinator can have a precise correctness story without re-proving the operations it dispatches.
+By treating the handlers as opaque and specializing the polymorphic function to its concrete `EStateM` runner, the proof isolates what the coordinator itself guarantees: the deposit gate, the required execution order, the threading of intermediate states, and the conditions for success.
 
-The main structural step was connecting the source-level SSZList loops to the left-to-right folds used in the theorem. That bridge keeps the characterization tied to the implementation and makes it sensitive to changes in the operation families or their order. The deposit result also illustrates an important limit of exact-runner proofs: an output does not always reveal which part of the computation produced it, so causal claims should be made only when the available assumptions justify them.
+The main structural step was connecting the source level `SSZList` loops to the left-to-right folds used in the theorem.
+That bridge keeps the characterization tied to the implementation and makes it sensitive to changes in the operation families or their order.
+The deposit result also illustrates an important limit of exact-runner proofs: an output does not always reveal which part of the computation produced it, so causal claims should be made only when the available assumptions justify them.
 
 ## Upstream Work
 
