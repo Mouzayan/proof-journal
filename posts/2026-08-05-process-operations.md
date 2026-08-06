@@ -86,10 +86,10 @@ I introduced `ProcessOperationsRun` as a transparent name for this runner.
 It carries a Beacon State through the computation and records the state reached whether the computation succeeds or fails.
 I also introduced `processOperationsForM` as a transparent name for processing one operation list from left to right through its handler.
 
-The source function uses Lean for loops over `SSZList`, a size-limited collection used for Ethereum consensus data and Simple Serialize (SSZ) encoding.
-An `SSZList` preserves a definite operation order and cannot exceed its protocol-defined capacity.
+The source function uses Lean for loops over `SSZList`, a size limited collection used for Ethereum consensus data and Simple Serialize (SSZ) encoding.
+An `SSZList` preserves a definite operation order and cannot exceed its protocol defined capacity.
 
-Rather than assuming how these loops execute, I proved a bridge between each source-level loop and `ForM.forM` over the `SSZList`’s underlying array, which Lean represents definitionally using `Array.foldlM`.
+Rather than assuming how these loops execute, I proved a bridge between each source level loop and `ForM.forM` over the `SSZList`’s underlying array, which Lean represents definitionally using `Array.foldlM`.
 This fold processes items from left to right, passing the state produced by each handler to the next and stopping when an error occurs.
 The bridge therefore connects the theorem’s description of each loop directly to the source implementation.
 
@@ -100,7 +100,7 @@ A converse would be misleading.
 When deposits are empty, an opaque operation handler could theoretically return an `.assert` error without changing the state.
 Observing that result alone would not prove that the opening deposit check caused the failure.
 
-The second public theorem, `processOperations_run_ok_iff`, is the main function-level result and is bidirectional.
+The second public theorem, `processOperations_run_ok_iff`, is the main function level result and is bidirectional.
 Private bind-decomposition lemmas split a successful sequence into two parts: the first action succeeds with an intermediate state, and the remaining actions succeed from that state.
 Applying these lemmas repeatedly exposes the five intermediate states.
 The reverse direction uses the same structure to reconstruct the complete successful run.
@@ -109,10 +109,11 @@ The reverse direction uses the same structure to reconstruct the complete succes
 The sequencing proof assumes no particular configuration values, cryptographic behavior, native cryptographic implementation, cache equivalence, or handler correctness.
 
 I did not add a theorem classifying every possible failure inside an operation handler.
-The immediate deposit-rejection theorem and the successful-run equivalence cover the intended coordinator-level scope.
+The immediate deposit rejection theorem and the successful run equivalence cover the intended coordinator level scope.
 
-This characterization is intentionally sensitive to the implementation.
-If the deposit gate, operation families, loop order, handlers, or `SSZList` iteration behavior changes, the bridge or sequencing proof should stop compiling instead of continuing to certify an outdated description of the function.
+This characterization is intentionally sensitive to the coordinator’s implementation.
+If the deposit gate, operation families, selected handlers, loop order, or `SSZList` iteration behavior changes, the bridge or sequencing proof should stop compiling instead of continuing to certify an outdated description.
+Changes inside an opaque handler may not affect this proof because handler correctness is deliberately outside its scope.
 
 ## Upstream Work
 
