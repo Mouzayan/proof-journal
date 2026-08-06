@@ -79,25 +79,19 @@ It does not establish the validity of individual operations, handler postconditi
 ## How I Structured the Proof
 
 I treated this as an exact-runner proof rather than a protocol-correctness proof.
-It describes how the Lean function executes: when it succeeds, how it handles the deposit check, and how it passes state between operation groups.
-It does not prove the correctness of Ethereum’s broader protocol rules or the individual operations.
+Although `processOperations` is polymorphic over its transition monad, the theorems specialize it to the concrete `EStateM StateTransitionError State` runner used by the Gloas interface.
+This makes it possible to describe exact `.ok` and `.error` results, intermediate states, and short-circuit behavior without making claims about the correctness of Ethereum’s broader protocol rules or the individual operations.
 
-Although `processOperations` is polymorphic over its transition monad and can work with different state-and-error wrappers, the theorems specialize it to the concrete `EStateM StateTransitionError State` runner used by the Gloas interface.
-This specialization allows the proof to describe exact `.ok` and `.error` results, intermediate states, and short-circuit behavior.
-
-`EStateM StateTransitionError State` carries a Beacon State through the computation.
-It can either succeed with an updated state or fail with a state-transition error, recording the state reached when the error occurred.
-
-I introduced `ProcessOperationsRun` as a transparent name for this concrete runner.
+I introduced `ProcessOperationsRun` as a transparent name for this runner.
+It carries a Beacon State through the computation and records the state reached whether the computation succeeds or fails.
 I also introduced `processOperationsForM` as a transparent name for processing one operation list from left to right through its handler.
 
-The source function uses Lean for loops over `SSZList`.
-An `SSZList` is a size-limited collection used for Ethereum consensus data and Simple Serialize (SSZ) encoding.
-It preserves a definite operation order and cannot exceed its protocol-defined capacity.
+The source function uses Lean for loops over `SSZList`, a size-limited collection used for Ethereum consensus data and Simple Serialize (SSZ) encoding.
+An `SSZList` preserves a definite operation order and cannot exceed its protocol-defined capacity.
 
 Rather than assuming how these loops execute, I proved a bridge between each source-level loop and `ForM.forM` over the `SSZList`’s underlying array, which Lean represents definitionally using `Array.foldlM`.
-`ForM.forM` processes the items from left to right: it runs the handler on the first item, passes the resulting state to the next, and stops if an error occurs.
-The bridge therefore connects the theorem’s folds directly to the loops in the source implementation.
+This fold processes items from left to right, passing the state produced by each handler to the next and stopping when an error occurs.
+The bridge therefore connects the theorem’s description of each loop directly to the source implementation.
 
 The first public theorem, `processOperations_nonempty_deposits_error`, handles the opening deposit assertion.
 It is deliberately one-directional: non-empty deposits imply an immediate assertion failure with the pre-state preserved.
@@ -111,17 +105,14 @@ Private bind-decomposition lemmas split a successful sequence into two parts: th
 Applying these lemmas repeatedly exposes the five intermediate states.
 The reverse direction uses the same structure to reconstruct the complete successful run.
 
-`[Config]` and `[CryptoBackend]` are not assumptions about the coordinator’s correctness.
-They remain in the theorem because the concrete handlers require them in order for the function to be defined.
-The proof assumes no particular configuration values or cryptographic behavior, nor does it rely on the correctness of native cryptographic code reached through the Foreign Function Interface (FFI), cache equivalence, or the handlers themselves.
+`[Config]` and `[CryptoBackend]` remain in the theorem because the concrete handlers require them in order for the function to be defined.
+The sequencing proof assumes no particular configuration values, cryptographic behavior, native cryptographic implementation, cache equivalence, or handler correctness.
 
 I did not add a theorem classifying every possible failure inside an operation handler.
-The immediate deposit-rejection theorem and the successful-run equivalence cover the coordinator-level scope.
-Ordinary `EStateM` bind semantics ensure that when an action fails, later actions do not run.
+The immediate deposit-rejection theorem and the successful-run equivalence cover the intended coordinator-level scope.
 
-The characterization is intentionally sensitive to the implementation.
-The bridge identifies the source-level for loops with the six folds described by the theorem, and the sequencing proof shows that those folds run in order while threading the resulting states between them.
-If the deposit gate, operation families, loop order, handlers, or `SSZList` iteration behavior changes, the proof should stop compiling instead of continuing to certify an outdated description of the function.
+This characterization is intentionally sensitive to the implementation.
+If the deposit gate, operation families, loop order, handlers, or `SSZList` iteration behavior changes, the bridge or sequencing proof should stop compiling instead of continuing to certify an outdated description of the function.
 
 ## Upstream Work
 
