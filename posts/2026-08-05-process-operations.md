@@ -70,7 +70,7 @@ This makes the exact deposit gate error, successful result, intermediate states,
 
 I introduced `ProcessOperationsRun` as a transparent name for this runner and `processOperationsForM` as a transparent name for processing one operation list from left to right through its handler.
 
-The source function uses Lean for loops over `SSZList`, a size-limited collection used for Ethereum consensus data and Simple Serialize (SSZ) encoding.
+The source function uses Lean `for` loops over `SSZList`, a size-limited collection used for Ethereum consensus data and Simple Serialize (SSZ) encoding.
 An `SSZList` preserves a definite operation order and cannot exceed its protocol-defined capacity.
 
 Rather than assuming how these loops execute, I proved a bridge between each source-level loop and `ForM.forM` over the `SSZList`’s underlying array, which Lean represents definitionally using `Array.foldlM`.
@@ -95,7 +95,7 @@ Changes inside an opaque handler may not affect this proof because handler corre
 
 ## Takeaway
 
-Proving properties of `processOperations` showed that a coordinator can have a precise formal control flow characterization without re-proving the operations it dispatches.
+Proving properties of `processOperations` showed that a coordinator can have a precise formal characterization of its control flow without re-proving the operations it dispatches.
 By treating each handler as an opaque action, the proof isolates what the coordinator controls: the deposit check, execution order, propagation of updated states, and conditions for success.
 
 The key structural step was connecting the source-level `SSZList` loops to the left-to-right folds used in the theorem.
