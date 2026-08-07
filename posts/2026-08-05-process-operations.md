@@ -3,6 +3,10 @@
 `processOperations` looks like a deposit check followed by six loops.
 Formalizing it exposed two less obvious questions: how can the proof track state through every loop, and how much can the final result reveal about where execution stopped?
 
+## Upstream Work
+
+Proof PR: [etheorem #57](https://github.com/etheorem/etheorem/pull/57) — characterizes deposit rejection, operation sequencing, and state propagation.
+
 ## The Goal
 
 `processOperations` coordinates the consensus operations contained in a Gloas block.
@@ -95,13 +99,9 @@ Changes inside an opaque handler may not affect this proof because handler corre
 
 ## Takeaway
 
-Proving properties of `processOperations` showed that a coordinator can have a precise formal characterization of its control flow without re-proving the operations it dispatches.
+Proving properties of `processOperations` showed that a coordinator can have a precise formal control flow characterization without re-proving the operations it dispatches.
 By treating each handler as an opaque action, the proof isolates what the coordinator controls: the deposit check, execution order, propagation of updated states, and conditions for success.
 
 The key structural step was connecting the source-level `SSZList` loops to the left-to-right folds used in the theorem.
 This keeps the result tied to the implementation.
 The deposit theorem also illustrates an important limitation: an error result does not always identify which part of a computation produced it, so causal claims require more than the output alone.
-
-## Upstream Work
-
-Proof: [etheorem PR #57](https://github.com/etheorem/etheorem/pull/57) — `processOperations` operation-sequencing and state-propagation proofs
