@@ -6,6 +6,7 @@ My notes on formalizing Ethereum consensus properties in Lean.
 
 ### 2026
 
+- **October 15** — [Understanding Heze ePBS–FOCIL composition](posts/2026-10-15-heze-epbs-focil-composition.md)) — Designing compositional proofs across fork boundaries, state invariants, and fork-choice consequences.
 - **August 5** — [Understanding `processOperations`](posts/2026-08-05-process-operations.md) — Characterizing legacy-deposit rejection, ordered operation processing, intermediate-state propagation, and failure semantics.
 - **July 28** — [Understanding `initiateBuilderExit`](posts/2026-07-28-initiate-builder-exit.md) — Characterizing builder-exit state updates, out-of-range behavior, and no-overflow guarantees.
 - **July 24** — [Understanding `isValidIndexedPayloadAttestation`](posts/2026-07-24-valid-indexed-payload-attestation.md) — Characterizing the validation of indexed payload attestations and aggregate signatures.
