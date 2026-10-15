@@ -33,7 +33,7 @@ This is how FOCIL can affect ePBS behavior even inside machinery originally inhe
 
 So proving each function independently does not by itself prove that the pieces fit together correctly.
 
-The proof shape I settled on is modular:
+The resulting proof shape is modular:
 
 `writer → state fact / invariant → reader → fork-choice consequence`
 
@@ -44,8 +44,8 @@ Finally, a fork-choice theorem shows the protocol consequence.
 
 One important decision is that these proofs remain separate.
 
-I do not want every downstream theorem to depend directly on one specific writer if all it really needs is a store property.
-The proofs need to be reusable and decoupled from unrelated parts of the implementation.
+A downstream theorem should not depend directly on one specific writer if all it really needs is a store property.
+This keeps the proofs reusable and decoupled from unrelated parts of the implementation.
 
 ## The Three Layers
 
@@ -83,7 +83,7 @@ The third layer is **protocol consequences**.
 
 These proofs answer the question: after all of this bookkeeping, what actually changes in fork choice?
 
-The first protocol consequence we plan to prove starts with a recorded FOCIL `false`, meaning Heze has checked whether the revealed execution payload satisfies the applicable inclusion-list requirements and stored the answer `false`.
+The first protocol consequence in the roadmap starts with a recorded FOCIL `false`, meaning Heze has checked whether the revealed execution payload satisfies the applicable inclusion-list requirements and stored the answer `false`.
 
 In ePBS fork choice, the same block root can be considered in two payload states: `FULL`, representing the candidate with its execution payload revealed, and `EMPTY`, representing the corresponding empty-payload candidate.
 For the previous-slot comparison we care about, neither voting weight nor the block root gives fork choice a reason to prefer one over the other.
@@ -97,7 +97,7 @@ It does not yet prove that the full `getHead` traversal will encounter that part
 
 ## The First Composition Story
 
-The first end-to-end proof chain we will work through follows one FOCIL result through the system:
+The first end-to-end proof chain in the roadmap follows one FOCIL result through the system:
 
 `onExecutionPayloadEnvelope`
 → payload + FOCIL satisfaction result
@@ -128,11 +128,10 @@ The later `VerifiedImpliesRecorded` invariant should prove that this cannot happ
 This separation is important.
 The local writer/reader proof does not have to wait for a proof about all stores reachable through valid protocol execution.
 
-## Why I Kept the Proofs Modular
+## Why Make the Proofs Modular
 
-It would be possible to aim immediately for one large theorem that starts at payload reveal and ends somewhere inside `getHead`.
-
-I decided against that because the intermediate facts are useful on their own.
+It would have been possible to aim immediately for one large theorem that starts at payload reveal and ends somewhere inside `getHead`.
+The reason not to do that is that the intermediate facts are useful on their own.
 
 For example, the tiebreaker theorem should depend on `shouldExtendPayload = false`, not specifically on `onExecutionPayloadEnvelope`.
 A successful envelope is one way to establish that result, but not the only one.
